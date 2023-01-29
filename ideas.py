@@ -89,7 +89,7 @@ for d in range(3):
         a.n_training = 500
         a.n_inducing = 250
     else:
-        a.n_training = 1000
+        a.n_training = 2000
         a.n_inducing = 500
 
     mse_exact = torch.tensor([0.]).reshape([1,1])
@@ -154,6 +154,9 @@ for d in range(3):
     a = experiments(d+1, 'Yuan')
     if d == 0:
         a.n_training = 500
+        a.n_inducing = 250
+    else:
+        a.n_training = 1000
         a.n_inducing = 500
     mse_nn = torch.tensor([0.]).reshape([1,1])
     training_times_nn = np.array(0)
