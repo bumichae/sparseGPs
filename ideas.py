@@ -10,10 +10,11 @@ import time
 import numpy as np
 import pandas as pd
 import torch
+import io
 
 #os.chdir('C:/Users/michael.burkhalter/OneDrive - Bernina ReInsurance/Desktop/Capstone Project')
 
-os.chdir('E:/My Drive/Studium/2022 Fall/Capstone Project/')
+#os.chdir('E:/My Drive/Studium/2022 Fall/Capstone Project/')
 
 #os.chdir('/home/michael/Desktop/Capstone Project')
 
