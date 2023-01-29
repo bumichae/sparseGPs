@@ -1,3 +1,7 @@
+import torch
+import typing
+from torch import nn
+
 class DenseNet(nn.Module):
     """
     Simple module implementing a feedforward neural network.
