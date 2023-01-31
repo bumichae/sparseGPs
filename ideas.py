@@ -10,6 +10,7 @@ import time
 import numpy as np
 import pandas as pd
 import torch
+from doExperiments import *
 
 #os.chdir('C:/Users/michael.burkhalter/OneDrive - Bernina ReInsurance/Desktop/Capstone Project')
 
@@ -17,7 +18,7 @@ import torch
 
 #os.chdir('/home/michael/Desktop/Capstone Project')
 
-from doExperiments import *
+
 
 a = experiments(2,'Liu')
 
@@ -88,9 +89,11 @@ for d in range(3):
     if d == 0:
         a.n_training = 500
         a.n_inducing = 250
+        a.n_test = 500
     else:
-        a.n_training = 2000
+        a.n_training = 4000
         a.n_inducing = 500
+        a.n_test = 2000
 
     mse_exact = torch.tensor([0.]).reshape([1,1])
     mse_approx = torch.tensor([0.]).reshape([1,1])
@@ -144,6 +147,9 @@ mse = pd.DataFrame({'Exact 1d MAE' : mse_exact_1d.detach().numpy().reshape([-1])
 training_times_exact = [training_times_1d_exact.mean(),training_times_2d_exact.mean(),training_times_3d_exact.mean()]
 training_times_approx = [training_times_1d_approx.mean(),training_times_2d_approx.mean(),training_times_3d_approx.mean()]
 
+mse.to_clipboard(index=False)
+training_times_exact
+training_times_approx
 
 ### NN experiments 5 times on random train/test data for d = 1,2,3
 
@@ -151,13 +157,13 @@ from doExperiments import *
 
 ### this is killed as memory is full for d=2 after 2 training loops
 for d in range(3):
-    a = experiments(d+1, 'Yuan')
+    a = experiments(d+1, 'Liu')
     if d == 0:
         a.n_training = 500
         a.n_inducing = 250
     else:
-        a.n_training = 1000
-        a.n_inducing = 500
+        a.n_training = 2000
+        a.n_inducing = 1000
     mse_nn = torch.tensor([0.]).reshape([1,1])
     training_times_nn = np.array(0)
     for i in range(5):

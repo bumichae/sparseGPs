@@ -34,6 +34,7 @@ class experiments:
         
         torch.manual_seed(0)
         self.dim = dim
+        self.n_test = gridSize
         self.n_training = gridSize
         self.n_inducing = 1000
         self.x_train = None
@@ -291,7 +292,8 @@ class experiments:
             GridY = GridY.T
             GridZ = GridZ.T
             self.gridPoints = torch.from_numpy(np.vstack([GridX.ravel(), GridY.ravel(), GridZ.ravel()])).t().to(torch.float64)
-            x_test = torch.from_numpy(np.vstack([GridX.ravel(), GridY.ravel(), GridZ.ravel()])).t().to(torch.float64)
+            #x_test = torch.from_numpy(np.vstack([GridX.ravel(), GridY.ravel(), GridZ.ravel()])).t().to(torch.float64)
+            x_test = self.gridPoints[torch.randperm(len(self.gridPoints))][:self.n_test]
             y_test = self.sampleToyField(x_test)
             
         elif self.dim == 2:
@@ -312,7 +314,8 @@ class experiments:
             GridX = GridX.T
             GridY = GridY.T
             self.gridPoints = torch.from_numpy(np.vstack([GridX.ravel(), GridY.ravel()])).t().to(torch.float64)
-            x_test = torch.from_numpy(np.vstack([GridX.ravel(), GridY.ravel()])).t().to(torch.float64)
+            #x_test = torch.from_numpy(np.vstack([GridX.ravel(), GridY.ravel()])).t().to(torch.float64)
+            x_test = self.gridPoints[torch.randperm(len(self.gridPoints))][:self.n_test]
             y_test = self.sampleToyField(x_test) 
         else:
             
@@ -324,8 +327,10 @@ class experiments:
             xmin = torch.min(x0)
             
             self.gridPoints = x0.detach()
-            x_test = torch.linspace(xmin, xmax, 100).double()
-            y_test = self.sampleToyField(x_test.reshape([100,1]))
+            #x_test = torch.linspace(xmin, xmax, 100).double()
+            x_test = self.gridPoints[torch.randperm(len(self.gridPoints))][:self.n_test]
+            #y_test = self.sampleToyField(x_test.reshape([100,1]))
+            y_test = self.sampleToyField(x_test) 
 
         mGrid,rGrid = self.toyField(self.gridPoints)
         
@@ -381,40 +386,7 @@ class experiments:
         
         else:
             
-            # in1 = self.dim
-            # out1 = 1000
-            # in2 = out1
-            # out2 = 1000
-            # in3 = out2
-            # out3 = 1
-            
-            # model = nn.Sequential(nn.Linear(in1, out1),
-            #               nn.Tanh(),
-            #               nn.Linear(in2,out2),
-            #               nn.Tanh(),
-            #               nn.Linear(in3,out3),
-            #               nn.Tanh())
-    
-            # loss_function = nn.MSELoss()
-            # optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
-            
-            # losses = []
-            # start = time.time()
-            # for epoch in range(1000):
-            #     nn_y_pred = model(self.x_train.float())
-            #     loss = loss_function(nn_y_pred, self.y_train.reshape(nn_y_pred.shape).float())
-            #     losses.append(loss.item())
-            
-            #     model.zero_grad()
-            #     loss.backward()
-            
-            #     optimizer.step()
-            #     if(epoch % 100 == 0):
-            #         print("Finished Epoch " + str(epoch) + " out of " + str(1000))
-            # end = time.time()
-            
-            # print('Training took %.3f seconds' %(end - start))
-            
+                
             model = DenseNet(self.dim, (1000,500,500,100), 1)
             loss_function = nn.MSELoss()
             optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
@@ -550,7 +522,8 @@ class experiments:
 
     def testNNModel(self, model):
         if self.dim == 1:
-            y_pred = model(self.x_test.reshape([100,1]).float())
+            #y_pred = model(self.x_test.reshape([100,1]).float())
+            y_pred = model(self.x_test.float())
         else:
             
             test_dataset = TensorDataset(self.x_test, self.y_test)
