@@ -9,7 +9,7 @@ import typing
 import numpy as np
 import torch
 import torch.nn as nn
-from torch.utils.data import TensorDataset, DataLoader
+from torch.utils.data import TensorDataset, DataLoader, random_split
 import math
 import gpytorch
 from gpytorch.models import ApproximateGP
@@ -292,9 +292,8 @@ class experiments:
             GridY = GridY.T
             GridZ = GridZ.T
             self.gridPoints = torch.from_numpy(np.vstack([GridX.ravel(), GridY.ravel(), GridZ.ravel()])).t().to(torch.float64)
-            #x_test = torch.from_numpy(np.vstack([GridX.ravel(), GridY.ravel(), GridZ.ravel()])).t().to(torch.float64)
-            x_test = self.gridPoints[torch.randperm(len(self.gridPoints))][:self.n_test]
-            y_test = self.sampleToyField(x_test)
+            # x_test = self.gridPoints[torch.randperm(len(self.gridPoints))][:self.n_test]
+            # y_test = self.sampleToyField(x_test)
             
         elif self.dim == 2:
         
@@ -314,9 +313,8 @@ class experiments:
             GridX = GridX.T
             GridY = GridY.T
             self.gridPoints = torch.from_numpy(np.vstack([GridX.ravel(), GridY.ravel()])).t().to(torch.float64)
-            #x_test = torch.from_numpy(np.vstack([GridX.ravel(), GridY.ravel()])).t().to(torch.float64)
-            x_test = self.gridPoints[torch.randperm(len(self.gridPoints))][:self.n_test]
-            y_test = self.sampleToyField(x_test) 
+            # x_test = self.gridPoints[torch.randperm(len(self.gridPoints))][:self.n_test]
+            # y_test = self.sampleToyField(x_test) 
         else:
             
             nx = int(1000)
@@ -327,10 +325,8 @@ class experiments:
             xmin = torch.min(x0)
             
             self.gridPoints = x0.detach()
-            #x_test = torch.linspace(xmin, xmax, 100).double()
-            x_test = self.gridPoints[torch.randperm(len(self.gridPoints))][:self.n_test]
-            #y_test = self.sampleToyField(x_test.reshape([100,1]))
-            y_test = self.sampleToyField(x_test) 
+            # x_test = self.gridPoints[torch.randperm(len(self.gridPoints))][:self.n_test]
+            # y_test = self.sampleToyField(x_test) 
 
         mGrid,rGrid = self.toyField(self.gridPoints)
         
@@ -340,8 +336,15 @@ class experiments:
         self.fVarMin = torch.min(rGrid)
         self.fVarMax = torch.max(rGrid)
         
-        x_train = self.gridPoints[torch.randperm(len(self.gridPoints))][:self.n_training]
+        ind_train, ind_test, rest = random_split(range(len(self.gridPoints)), 
+                                                 [self.n_training,self.n_test, 
+                                                  len(self.gridPoints)-self.n_training-self.n_test]
+                                                 )
+        #x_train = self.gridPoints[torch.randperm(len(self.gridPoints))][:self.n_training]
+        x_train = self.gridPoints[ind_train]
         y_train = self.sampleToyField(x_train)
+        x_test = self.gridPoints[ind_test]
+        y_test = self.sampleToyField(x_test) 
         return x_train, y_train, x_test, y_test
     
     def trainNeuralNetwork(self):

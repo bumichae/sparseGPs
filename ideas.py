@@ -85,13 +85,14 @@ means_approx_update,var_approx_update, err_approx_update = a.testApproximateGPMo
 
 
 for d in range(3):
-    a = experiments(d+1,'Yuan')
+    from doExperiments import *
+    a = experiments(d+1,'Liu')
     if d == 0:
         a.n_training = 500
         a.n_inducing = 250
         a.n_test = 500
     else:
-        a.n_training = 4000
+        a.n_training = 2000
         a.n_inducing = 500
         a.n_test = 2000
 
@@ -147,7 +148,17 @@ mse = pd.DataFrame({'Exact 1d MAE' : mse_exact_1d.detach().numpy().reshape([-1])
 training_times_exact = [training_times_1d_exact.mean(),training_times_2d_exact.mean(),training_times_3d_exact.mean()]
 training_times_approx = [training_times_1d_approx.mean(),training_times_2d_approx.mean(),training_times_3d_approx.mean()]
 
+training_times = pd.DataFrame({'Exact 1d MAE' : training_times_1d_exact.mean().reshape([-1]),
+                         'Exact 2d MAE' : training_times_2d_exact.mean().reshape([-1]),
+                         'Exact 3d MAE' : training_times_3d_exact.mean().reshape([-1]),
+                         'Approximate 1d MAE' : training_times_1d_approx.mean().reshape([-1]),
+                         'Approximate 2d MAE' : training_times_2d_approx.mean().reshape([-1]),
+                         'Approximate 3d MAE' : training_times_3d_approx.mean().reshape([-1])})
+
 mse.to_clipboard(index=False)
+
+training_times.to_clipboard(index=False, header = False)
+
 training_times_exact
 training_times_approx
 
@@ -157,13 +168,14 @@ from doExperiments import *
 
 ### this is killed as memory is full for d=2 after 2 training loops
 for d in range(3):
-    a = experiments(d+1, 'Liu')
+    from doExperiments import *
+    a = experiments(d+1, 'Yuan')
     if d == 0:
         a.n_training = 500
         a.n_inducing = 250
     else:
         a.n_training = 2000
-        a.n_inducing = 1000
+        a.n_inducing = 500
     mse_nn = torch.tensor([0.]).reshape([1,1])
     training_times_nn = np.array(0)
     for i in range(5):
@@ -193,6 +205,15 @@ training_times_nn = [training_times_nn_1d.mean(),
 mse = pd.DataFrame({'MSE NN 1d' : mse_nn_1d.detach().numpy().reshape([-1]),
                     'MSE NN 2d' : mse_nn_2d.detach().numpy().reshape([-1]),
                     'MSE NN 3d' : mse_nn_3d.detach().numpy().reshape([-1])})
+
+
+training_times_nn = pd.DataFrame({'MAE NN 1d' : training_times_nn_1d.mean().reshape([-1]),
+                         'MAE NN 2d' : training_times_nn_2d.mean().reshape([-1]),
+                         'MAE NN 3d' : training_times_nn_3d.mean().reshape([-1])})
+
+mse.to_clipboard(index = False)
+
+training_times_nn.to_clipboard(index=False, header=False)
 
 
 a.plot1d(a.x_test, nn_y_pred)
