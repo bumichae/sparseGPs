@@ -12,15 +12,7 @@ import pandas as pd
 import torch
 from doExperiments import *
 
-#os.chdir('C:/Users/michael.burkhalter/OneDrive - Bernina ReInsurance/Desktop/Capstone Project')
-
-#os.chdir('E:/My Drive/Studium/2022 Fall/Capstone Project/')
-
-#os.chdir('/home/michael/Desktop/Capstone Project')
-
-
-
-a = experiments(2,'Liu')
+a = experiments(1,'Liu')
 
 a.x_train, a.y_train, a.x_test, a.y_test = a.prepareTrainingData()
 
@@ -88,11 +80,11 @@ for d in range(3):
     from doExperiments import *
     a = experiments(d+1,'Liu')
     if d == 0:
-        a.n_training = 500
-        a.n_inducing = 250
-        a.n_test = 500
+        a.n_training = 800
+        a.n_inducing = 500
+        a.n_test = 200
     else:
-        a.n_training = 2000
+        a.n_training = 1000
         a.n_inducing = 500
         a.n_test = 2000
 
@@ -148,19 +140,18 @@ mse = pd.DataFrame({'Exact 1d MAE' : mse_exact_1d.detach().numpy().reshape([-1])
 training_times_exact = [training_times_1d_exact.mean(),training_times_2d_exact.mean(),training_times_3d_exact.mean()]
 training_times_approx = [training_times_1d_approx.mean(),training_times_2d_approx.mean(),training_times_3d_approx.mean()]
 
-training_times = pd.DataFrame({'Exact 1d MAE' : training_times_1d_exact.mean().reshape([-1]),
-                         'Exact 2d MAE' : training_times_2d_exact.mean().reshape([-1]),
-                         'Exact 3d MAE' : training_times_3d_exact.mean().reshape([-1]),
-                         'Approximate 1d MAE' : training_times_1d_approx.mean().reshape([-1]),
-                         'Approximate 2d MAE' : training_times_2d_approx.mean().reshape([-1]),
-                         'Approximate 3d MAE' : training_times_3d_approx.mean().reshape([-1])})
+training_times = pd.DataFrame({'1d Exact Training Time' : training_times_1d_exact.mean().reshape([-1]),
+                         '2d Exact Training Time' : training_times_2d_exact.mean().reshape([-1]),
+                         '3d Exact Training Time' : training_times_3d_exact.mean().reshape([-1]),
+                         '1d Approximate Training Time' : training_times_1d_approx.mean().reshape([-1]),
+                         '2d Approximate Training Time' : training_times_2d_approx.mean().reshape([-1]),
+                         '3d Approximate Training Time' : training_times_3d_approx.mean().reshape([-1])})
 
 mse.to_clipboard(index=False)
 
 training_times.to_clipboard(index=False, header = False)
 
-training_times_exact
-training_times_approx
+
 
 ### NN experiments 5 times on random train/test data for d = 1,2,3
 
@@ -169,12 +160,12 @@ from doExperiments import *
 ### this is killed as memory is full for d=2 after 2 training loops
 for d in range(3):
     from doExperiments import *
-    a = experiments(d+1, 'Yuan')
+    a = experiments(d+1, 'Liu')
     if d == 0:
         a.n_training = 500
         a.n_inducing = 250
     else:
-        a.n_training = 2000
+        a.n_training = 1000
         a.n_inducing = 500
     mse_nn = torch.tensor([0.]).reshape([1,1])
     training_times_nn = np.array(0)
@@ -214,6 +205,7 @@ training_times_nn = pd.DataFrame({'MAE NN 1d' : training_times_nn_1d.mean().resh
 mse.to_clipboard(index = False)
 
 training_times_nn.to_clipboard(index=False, header=False)
+
 
 
 a.plot1d(a.x_test, nn_y_pred)

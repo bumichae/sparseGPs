@@ -26,8 +26,6 @@ from models import *
 import time
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
-
-
 class experiments:
     
     def __init__(self, dim = 1, field = 'Liu', gridSize = 2000):
@@ -313,8 +311,7 @@ class experiments:
             GridX = GridX.T
             GridY = GridY.T
             self.gridPoints = torch.from_numpy(np.vstack([GridX.ravel(), GridY.ravel()])).t().to(torch.float64)
-            # x_test = self.gridPoints[torch.randperm(len(self.gridPoints))][:self.n_test]
-            # y_test = self.sampleToyField(x_test) 
+
         else:
             
             nx = int(1000)
@@ -325,8 +322,7 @@ class experiments:
             xmin = torch.min(x0)
             
             self.gridPoints = x0.detach()
-            # x_test = self.gridPoints[torch.randperm(len(self.gridPoints))][:self.n_test]
-            # y_test = self.sampleToyField(x_test) 
+
 
         mGrid,rGrid = self.toyField(self.gridPoints)
         
@@ -340,7 +336,6 @@ class experiments:
                                                  [self.n_training,self.n_test, 
                                                   len(self.gridPoints)-self.n_training-self.n_test]
                                                  )
-        #x_train = self.gridPoints[torch.randperm(len(self.gridPoints))][:self.n_training]
         x_train = self.gridPoints[ind_train]
         y_train = self.sampleToyField(x_train)
         x_test = self.gridPoints[ind_test]
@@ -420,10 +415,8 @@ class experiments:
         model.train()
         likelihood.train()
         
-        # Use the adam optimizer
-        optimizer = torch.optim.Adam(model.parameters(), lr=0.01)  # Includes GaussianLikelihood parameters
+        optimizer = torch.optim.Adam(model.parameters(), lr=0.01)  
         
-        # "Loss" for GPs - the marginal log likelihood
         mll = gpytorch.mlls.ExactMarginalLogLikelihood(likelihood, model)
         
         training_iter = 100
@@ -444,10 +437,10 @@ class experiments:
     def trainApproximateGP(self):
         
         train_dataset = TensorDataset(self.x_train, self.y_train)
-        train_loader = DataLoader(train_dataset, batch_size=500, shuffle=True) #1000 for ful lgrid
+        train_loader = DataLoader(train_dataset, batch_size=500, shuffle=True)
         
         likelihood = gpytorch.likelihoods.GaussianLikelihood()
-        inducing_points = self.x_train[torch.randperm(len(self.x_train))[:self.n_inducing]] #back to 1000
+        inducing_points = self.x_train[torch.randperm(len(self.x_train))[:self.n_inducing]] 
         
         model = ApproximateGPModel(inducing_points = inducing_points).double()
         
@@ -484,7 +477,7 @@ class experiments:
     def testExactGPModel(self, model, likelihood):
         
         test_dataset = TensorDataset(self.x_test, self.y_test)
-        test_loader = DataLoader(test_dataset, batch_size=500, shuffle=False) #1000 for ful lgrid
+        test_loader = DataLoader(test_dataset, batch_size=500, shuffle=False) 
         
         model.eval()
         likelihood.eval()
@@ -505,7 +498,7 @@ class experiments:
     
     def testApproximateGPModel(self, model, likelihood):
         test_dataset = TensorDataset(self.x_test, self.y_test)
-        test_loader = DataLoader(test_dataset, batch_size=500, shuffle=False) #1000 for ful lgrid
+        test_loader = DataLoader(test_dataset, batch_size=500, shuffle=False) 
         model.eval()
         likelihood.eval()
         means = torch.tensor([0.])
@@ -525,12 +518,11 @@ class experiments:
 
     def testNNModel(self, model):
         if self.dim == 1:
-            #y_pred = model(self.x_test.reshape([100,1]).float())
             y_pred = model(self.x_test.float())
         else:
             
             test_dataset = TensorDataset(self.x_test, self.y_test)
-            test_loader = DataLoader(test_dataset, batch_size=500, shuffle=False) #1000 for ful lgrid
+            test_loader = DataLoader(test_dataset, batch_size=500, shuffle=False) 
             y_pred = torch.tensor([0.]).reshape([1,1])
             with torch.no_grad():
                 for x_batch, y_batch in test_loader:
@@ -559,7 +551,7 @@ class experiments:
             
             ax0 = fig0.add_subplot(1, 2, 1)        
             ax0.set_title('Posterior mean', size=7,pad=3.0)
-            ax0.plot(x.detach().numpy(),y.detach().numpy())
+            ax0.plot(x.detach().numpy(),y.detach().numpy(),'b.')
             ax0.set_xlabel(r'x', size=7)
             ax0.set_ylabel(r'y', size=7)
             ax0.set_xlim((xmin,xmax))
@@ -567,7 +559,7 @@ class experiments:
         
             ax1 = fig0.add_subplot(1, 2, 2)
             ax1.set_title('Posterior variance', size=7,pad=3.0)
-            ax1.plot(x.detach().numpy(),var.detach().numpy())         
+            ax1.plot(x.detach().numpy(),var.detach().numpy(), 'b.')         
             ax1.set_xlabel(r'x', size=7)
             ax1.set_ylabel(r'y', size=7)
             ax1.set_xlim((xmin,xmax))
