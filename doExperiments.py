@@ -463,7 +463,7 @@ class experiments:
                                                     model, 
                                                     num_data=self.y_train.size(0))
         
-        num_epochs = 5        
+        num_epochs = 10        
         epochs_iter = tqdm.tqdm(range(num_epochs), desc="Epoch")
         
         start = time.time()
@@ -762,23 +762,6 @@ class experiments:
     
     def plot2d(self,x,y, var = None):
         
-        if self.field == 'Liu':
-            # x-axis
-            xmin = -2.5
-            xmax = 2.5
-            nx = 150
-            # y-axis
-            ymin = -2.5
-            ymax = 2.5
-            ny = 150
-        else:
-            xmin = 0
-            xmax = 1
-            ymin = 0
-            ymax = 1
-            nx = 150
-            ny = 150
-
         if var != None:
             
             fig = plt.figure(figsize=(16, 9))
@@ -786,11 +769,13 @@ class experiments:
             ax0 = fig.add_subplot(1, 2, 1)        
             ax0.set_title('Posterior mean', size=7,pad=3.0)
             
-            x = x[:,0].numpy()
-            y = x[:,1].numpy()
-            c = y.numpy()
+            x_plot = x[:,0].numpy()
+            y_plot = x[:,1].numpy()
+            col = y.numpy()
             
-            im0 = ax0.scatter(x,y,c)
+            im0 = ax0.scatter(x_plot,y_plot,c = col,
+                              vmin = self.fMin, vmax = self.fMax,
+                              cmap = cm.RdBu_r)
             plt.colorbar(im0, ax=ax0, shrink=0.3)
             
             ax1 = fig.add_subplot(1, 2, 2)        
@@ -798,9 +783,11 @@ class experiments:
             
             x_plot = x[:,0].numpy()
             y_plot = x[:,1].numpy()
-            c = var.numpy()
+            col = var.numpy()
             
-            im1 = ax1.scatter(x_plot,y_plot,c)
+            im1 = ax1.scatter(x_plot,y_plot,c = col,
+                              vmin = self.fVarMin, vmax = self.fVarMax,
+                              cmap = cm.RdBu_r)
             plt.colorbar(im1, ax=ax1, shrink=0.3)
             
         else:
@@ -811,9 +798,11 @@ class experiments:
             
             x_plot = x[:,0].numpy()
             y_plot = x[:,1].numpy()
-            c = y.numpy()
+            col = y.numpy()
             
-            im0 = ax0.scatter(x_plot,y_plot,c)
+            im0 = ax0.scatter(x_plot,y_plot,c = col,
+                              vmin = self.fMin, vmax = self.fMax,
+                              cmap = cm.RdBu_r)
             plt.colorbar(im0, ax=ax0, shrink=0.3)
             
         return fig
@@ -827,9 +816,9 @@ class experiments:
             x_plot = x[:,0].numpy()
             y_plot = x[:,1].numpy()
             z_plot = x[:,2].numpy()
-            c = y.numpy()
+            col = y.numpy()
             
-            im0 = ax0.scatter(x_plot, y_plot, z_plot, c=c, cmap=cm.RdBu_r, s=0.1)
+            im0 = ax0.scatter(x_plot, y_plot, z_plot, c=col, cmap=cm.RdBu_r, s=0.1)
             ax0.set_xlabel(r'x', size=7)
             ax0.set_ylabel(r'y', size=7)
             ax0.set_zlabel(r'z', size=7)
@@ -839,9 +828,9 @@ class experiments:
             ax1 = fig.add_subplot(122, projection='3d')
             ax1.set_title('Posterior variance', size=7,pad=3.0)
             
-            c = var.numpy()
+            col = var.numpy()
             
-            im1 = ax1.scatter(x_plot, y_plot, z_plot, c=c, cmap=plt.hot(), s=0.1)
+            im1 = ax1.scatter(x_plot, y_plot, z_plot, c=col, cmap=plt.hot(), s=0.1)
             ax1.set_xlabel(r'x', size=7)
             ax1.set_ylabel(r'y', size=7)
             ax1.set_zlabel(r'z', size=7)
@@ -853,9 +842,9 @@ class experiments:
             x_plot = x[:,0].numpy()
             y_plot = x[:,1].numpy()
             z_plot = x[:,2].numpy()
-            c = y.numpy()
+            col = y.numpy()
             
-            im0 = ax0.scatter(x_plot, y_plot, z_plot, c=c, cmap=cm.RdBu_r, s=0.1)
+            im0 = ax0.scatter(x_plot, y_plot, z_plot, c=col, cmap=cm.RdBu_r, s=0.1)
             ax0.set_xlabel(r'x', size=7)
             ax0.set_ylabel(r'y', size=7)
             ax0.set_zlabel(r'z', size=7)
