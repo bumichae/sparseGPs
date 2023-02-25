@@ -174,7 +174,9 @@ class experiments:
             ax.set_title('Posterior mean', size=7,pad=3.0)
         
             # Display the mean field
-            pcm = ax.scatter(gridPoints[:,0], gridPoints[:,1], gridPoints[:,2],c=fMean.T,s=0.1,vmin=fMin,vmax=fMax)
+            pcm = ax.scatter(gridPoints[:,0], gridPoints[:,1], gridPoints[:,2],
+                             c=fMean.T,s=0.1,vmin=fMin,vmax=fMax,
+                             cmap=cm.RdBu_r)
             plt.colorbar(pcm, ax=ax, shrink=0.3)
             ax.set_xlim(xmin,xmax)
             ax.set_ylim(ymin,ymax)
@@ -183,7 +185,9 @@ class experiments:
             # display the variance field
             ax = fig.add_subplot(122, projection='3d')
             ax.set_title('Posterior variance', size=7,pad=3.0)
-            pcm = ax.scatter(gridPoints[:,0], gridPoints[:,1], gridPoints[:,2],c=fVar.T,s=0.1,vmin=fVarMin,vmax=fVarMax)
+            pcm = ax.scatter(gridPoints[:,0], gridPoints[:,1], gridPoints[:,2],
+                             c=fVar.T,s=0.1,vmin=fVarMin,vmax=fVarMax,
+                             cmap=cm.RdBu_r)
             plt.colorbar(pcm, ax=ax, shrink=0.3)
             ax.set_xlim(xmin,xmax)
             ax.set_ylim(ymin,ymax)
@@ -421,11 +425,16 @@ class experiments:
         
         training_iter = 100
         start = time.time()
+        loss = [1000]
         for i in range(training_iter):
             optimizer.zero_grad()
             output = model(self.x_train)
-            loss = -mll(output, self.y_train)
-            loss.backward()
+            
+            loss.append(-mll(output, self.y_train))
+            
+            if (loss[i] - loss[i+1])/loss[i] < 0.0001:
+                break
+            loss[i+1].backward()
             optimizer.step()
             if not i % 10:
                 print('Step ' + str(i) + ' out of ' + str(training_iter))
@@ -454,7 +463,7 @@ class experiments:
                                                     model, 
                                                     num_data=self.y_train.size(0))
         
-        num_epochs = 20        
+        num_epochs = 5        
         epochs_iter = tqdm.tqdm(range(num_epochs), desc="Epoch")
         
         start = time.time()
@@ -535,6 +544,178 @@ class experiments:
         
         return y_pred, torch.mean(torch.abs(y_pred - self.y_test))
     
+    # def plot1d(self,x, y, var = None):
+    #     # x-axis
+    #     if self.field == 'Liu':
+    #         xmin = -2.5
+    #         xmax = 2.5
+            
+    #     else:
+    #         xmin = 0
+    #         xmax = 1
+        
+    #     if var != None:
+            
+    #         fig0 = plt.figure(figsize = (16,9))
+            
+    #         ax0 = fig0.add_subplot(1, 2, 1)        
+    #         ax0.set_title('Posterior mean', size=7,pad=3.0)
+    #         ax0.plot(x.detach().numpy(),y.detach().numpy(),'b.')
+    #         ax0.set_xlabel(r'x', size=7)
+    #         ax0.set_ylabel(r'y', size=7)
+    #         ax0.set_xlim((xmin,xmax))
+    #         ax0.set_ylim((y.detach().min()-0.5,y.detach().max()+0.5))
+        
+    #         ax1 = fig0.add_subplot(1, 2, 2)
+    #         ax1.set_title('Posterior variance', size=7,pad=3.0)
+    #         ax1.plot(x.detach().numpy(),var.detach().numpy(), 'b.')         
+    #         ax1.set_xlabel(r'x', size=7)
+    #         ax1.set_ylabel(r'y', size=7)
+    #         ax1.set_xlim((xmin,xmax))
+    #         ax1.set_ylim((var.detach().min()-0.5,var.detach().max()+0.5))
+            
+            
+    #     else:
+    #         fig0 = plt.figure(figsize=(16,9))
+
+    #         ax0 = fig0.add_subplot(1, 2, 1)        
+    #         ax0.set_title('Prediction', size=7,pad=3.0)
+    #         ax0.plot(x.detach().numpy(),y.detach().numpy())
+    #         ax0.set_xlabel(r'x', size=7)
+    #         ax0.set_ylabel(r'y', size=7)
+    #         ax0.set_xlim((xmin,xmax))
+    #         ax0.set_ylim((y.detach().min()-0.5,y.detach().max()+0.5))
+        
+    #     return fig0
+    
+    # def plot2d(self,x,y, var = None):
+        
+    #     if self.field == 'Liu':
+    #         # x-axis
+    #         xmin = -2.5
+    #         xmax = 2.5
+    #         nx = 150
+    #         # y-axis
+    #         ymin = -2.5
+    #         ymax = 2.5
+    #         ny = 150
+    #     else:
+    #         xmin = 0
+    #         xmax = 1
+    #         ymin = 0
+    #         ymax = 1
+    #         nx = 150
+    #         ny = 150
+
+    #     if var != None:
+            
+    #         fig0 = plt.figure(figsize=(16,9))
+    
+    #         extent = (xmin,xmax,ymin,ymax)
+            
+    #         ax0 = fig0.add_subplot(1, 2, 1)        
+    #         ax0.set_title('Posterior mean', size=7,pad=3.0)
+    #         im0 = ax0.imshow(y.detach().numpy().reshape(ny,nx).T,  extent=extent,
+    #                           cmap=cm.RdBu_r,vmin=self.fMin,vmax = self.fMax)
+    #         plt.colorbar(im0, ax=ax0, shrink=0.3)
+    #         ax0.set_xlabel(r'x', size=7)
+    #         ax0.set_ylabel(r'y', size=7)
+    #         ax0.set_xlim((xmin,xmax))
+    #         ax0.set_ylim((ymin,ymax))
+            
+    #         ax1 = fig0.add_subplot(1, 2, 2)
+    #         ax1.set_title('Posterior variance', size=7,pad=3.0)
+    #         im1 = ax1.imshow(var.detach().numpy().reshape(ny,nx).T, extent=extent, 
+    #                           cmap=cm.RdBu_r,vmin=self.fVarMin,vmax = self.fVarMax)
+    #         plt.colorbar(im1, ax=ax1, shrink=0.3)              
+    #         ax1.set_xlabel(r'x', size=7)
+    #         ax1.set_ylabel(r'y', size=7)
+    #         ax1.set_xlim((xmin,xmax))
+    #         ax1.set_ylim((ymin,ymax))
+            
+    #     else:
+    #         fig0 = plt.figure(figsize=(16,9))
+    
+    #         extent = (xmin,xmax,ymin,ymax)
+            
+    #         ax0 = fig0.add_subplot(1, 2, 1)        
+    #         ax0.set_title('Posterior mean', size=7,pad=3.0)
+    #         im0 = ax0.imshow(y.detach().numpy().reshape(ny,nx).T,  extent=extent,
+    #                           cmap=cm.RdBu_r,vmin=self.fMin,vmax = self.fMax)
+    #         plt.colorbar(im0, ax=ax0, shrink=0.3)
+    #         ax0.set_xlabel(r'x', size=7)
+    #         ax0.set_ylabel(r'y', size=7)
+    #         ax0.set_xlim((xmin,xmax))
+    #         ax0.set_ylim((ymin,ymax))
+            
+    #     return fig0
+
+    # def plot3d(self,x,y,var = None):     
+        
+    #     if self.field == 'Liu':
+    #         # x-axis
+    #         nx = 50
+    #         xmin = -2.5
+    #         xmax = 2.5
+    #         nx = 50
+    #         # y-axis
+    #         ny = 50
+    #         ymin = -2.5
+    #         ymax = 2.5
+    #         ny = 50
+    #         # z-axis
+    #         nz = 50
+    #         zmin = -2.5
+    #         zmax = 2.5        
+    #         nz = 50
+    #     else:
+    #         nx = 50
+    #         ny = 50
+    #         nz = 50
+    #         xmin = 0
+    #         xmax = 1
+    #         ymin = 0
+    #         ymax = 1
+    #         zmin = 0
+    #         zmax = 1
+    #     fMean = y.detach().numpy().reshape(nx,ny,nz)       
+        
+    #     if var != None:
+    #         fVar = var.detach().numpy().reshape(nx,ny,nz)
+    #         fig0 = plt.figure(figsize=(16, 9))
+    #         ax = fig0.add_subplot(121, projection='3d')
+            
+    #         # Display the mean field
+    #         pcm = ax.scatter(x[:,0], x[:,1], x[:,2],c=fMean.T,
+    #                           s=0.1,vmin=self.fMin,vmax=self.fMax)
+    #         plt.colorbar(pcm, ax=ax, shrink=0.3)
+    #         ax.set_xlim(xmin,xmax)
+    #         ax.set_ylim(ymin,ymax)
+    #         ax.set_zlim(zmin,zmax)
+            
+    #         # display the variance field
+    #         ax = fig0.add_subplot(122, projection='3d')
+    #         pcm = ax.scatter(x[:,0], x[:,1], x[:,2],c=fVar.T,
+    #                           s=0.1,vmin=self.fVarMin,vmax=self.fVarMax)
+    #         plt.colorbar(pcm, ax=ax, shrink=0.3)
+    #         ax.set_xlim(xmin,xmax)
+    #         ax.set_ylim(ymin,ymax)
+    #         ax.set_zlim(zmin,zmax)
+    #     else:
+    #         fig0 = plt.figure(figsize=(16, 9))
+    #         ax = fig0.add_subplot(121, projection='3d')
+            
+    #         # Display the mean field
+    #         pcm = ax.scatter(x[:,0], x[:,1], x[:,2],c=fMean.T,
+    #                           s=0.1,vmin=self.fMin,vmax=self.fMax)
+    #         plt.colorbar(pcm, ax=ax, shrink=0.3)
+    #         ax.set_xlim(xmin,xmax)
+    #         ax.set_ylim(ymin,ymax)
+    #         ax.set_zlim(zmin,zmax)
+            
+    #     return fig0
+    
+
     def plot1d(self,x, y, var = None):
         # x-axis
         if self.field == 'Liu':
@@ -600,112 +781,90 @@ class experiments:
 
         if var != None:
             
-            fig0 = plt.figure(figsize=(16,9))
-    
-            extent = (xmin,xmax,ymin,ymax)
-            
-            ax0 = fig0.add_subplot(1, 2, 1)        
+            fig = plt.figure(figsize=(16, 9))
+
+            ax0 = fig.add_subplot(1, 2, 1)        
             ax0.set_title('Posterior mean', size=7,pad=3.0)
-            im0 = ax0.imshow(y.detach().numpy().reshape(ny,nx).T,  extent=extent,
-                             cmap=cm.RdBu_r,vmin=self.fMin,vmax = self.fMax)
-            plt.colorbar(im0, ax=ax0, shrink=0.3)
-            ax0.set_xlabel(r'x', size=7)
-            ax0.set_ylabel(r'y', size=7)
-            ax0.set_xlim((xmin,xmax))
-            ax0.set_ylim((ymin,ymax))
             
-            ax1 = fig0.add_subplot(1, 2, 2)
+            x = x[:,0].numpy()
+            y = x[:,1].numpy()
+            c = y.numpy()
+            
+            im0 = ax0.scatter(x,y,c)
+            plt.colorbar(im0, ax=ax0, shrink=0.3)
+            
+            ax1 = fig.add_subplot(1, 2, 2)        
             ax1.set_title('Posterior variance', size=7,pad=3.0)
-            im1 = ax1.imshow(var.detach().numpy().reshape(ny,nx).T, extent=extent, 
-                             cmap=cm.RdBu_r,vmin=self.fVarMin,vmax = self.fVarMax)
-            plt.colorbar(im1, ax=ax1, shrink=0.3)              
-            ax1.set_xlabel(r'x', size=7)
-            ax1.set_ylabel(r'y', size=7)
-            ax1.set_xlim((xmin,xmax))
-            ax1.set_ylim((ymin,ymax))
+            
+            x_plot = x[:,0].numpy()
+            y_plot = x[:,1].numpy()
+            c = var.numpy()
+            
+            im1 = ax1.scatter(x_plot,y_plot,c)
+            plt.colorbar(im1, ax=ax1, shrink=0.3)
             
         else:
-            fig0 = plt.figure(figsize=(16,9))
+            fig = plt.figure(figsize=(16,9))
     
-            extent = (xmin,xmax,ymin,ymax)
-            
-            ax0 = fig0.add_subplot(1, 2, 1)        
+            ax0 = fig.add_subplot(1, 2, 1)        
             ax0.set_title('Posterior mean', size=7,pad=3.0)
-            im0 = ax0.imshow(y.detach().numpy().reshape(ny,nx).T,  extent=extent,
-                             cmap=cm.RdBu_r,vmin=self.fMin,vmax = self.fMax)
-            plt.colorbar(im0, ax=ax0, shrink=0.3)
-            ax0.set_xlabel(r'x', size=7)
-            ax0.set_ylabel(r'y', size=7)
-            ax0.set_xlim((xmin,xmax))
-            ax0.set_ylim((ymin,ymax))
             
-        return fig0
+            x_plot = x[:,0].numpy()
+            y_plot = x[:,1].numpy()
+            c = y.numpy()
+            
+            im0 = ax0.scatter(x_plot,y_plot,c)
+            plt.colorbar(im0, ax=ax0, shrink=0.3)
+            
+        return fig
 
     def plot3d(self,x,y,var = None):     
         
-        if self.field == 'Liu':
-            # x-axis
-            nx = 50
-            xmin = -2.5
-            xmax = 2.5
-            nx = 50
-            # y-axis
-            ny = 50
-            ymin = -2.5
-            ymax = 2.5
-            ny = 50
-            # z-axis
-            nz = 50
-            zmin = -2.5
-            zmax = 2.5        
-            nz = 50
-        else:
-            nx = 50
-            ny = 50
-            nz = 50
-            xmin = 0
-            xmax = 1
-            ymin = 0
-            ymax = 1
-            zmin = 0
-            zmax = 1
-        fMean = y.detach().numpy().reshape(nx,ny,nz)       
-        
         if var != None:
-            fVar = var.detach().numpy().reshape(nx,ny,nz)
-            fig0 = plt.figure(figsize=(16, 9))
-            ax = fig0.add_subplot(121, projection='3d')
+            fig = plt.figure(figsize=(16, 9))
+            ax0 = fig.add_subplot(121, projection='3d')
+            ax0.set_title('Posterior mean', size=7,pad=3.0)
+            x_plot = x[:,0].numpy()
+            y_plot = x[:,1].numpy()
+            z_plot = x[:,2].numpy()
+            c = y.numpy()
             
-            # Display the mean field
-            pcm = ax.scatter(x[:,0], x[:,1], x[:,2],c=fMean.T,
-                             s=0.1,vmin=self.fMin,vmax=self.fMax)
-            plt.colorbar(pcm, ax=ax, shrink=0.3)
-            ax.set_xlim(xmin,xmax)
-            ax.set_ylim(ymin,ymax)
-            ax.set_zlim(zmin,zmax)
+            im0 = ax0.scatter(x_plot, y_plot, z_plot, c=c, cmap=cm.RdBu_r, s=0.1)
+            ax0.set_xlabel(r'x', size=7)
+            ax0.set_ylabel(r'y', size=7)
+            ax0.set_zlabel(r'z', size=7)
             
-            # display the variance field
-            ax = fig0.add_subplot(122, projection='3d')
-            pcm = ax.scatter(x[:,0], x[:,1], x[:,2],c=fVar.T,
-                             s=0.1,vmin=self.fVarMin,vmax=self.fVarMax)
-            plt.colorbar(pcm, ax=ax, shrink=0.3)
-            ax.set_xlim(xmin,xmax)
-            ax.set_ylim(ymin,ymax)
-            ax.set_zlim(zmin,zmax)
+            plt.colorbar(im0, ax=ax0, shrink=0.3)
+            
+            ax1 = fig.add_subplot(122, projection='3d')
+            ax1.set_title('Posterior variance', size=7,pad=3.0)
+            
+            c = var.numpy()
+            
+            im1 = ax1.scatter(x_plot, y_plot, z_plot, c=c, cmap=plt.hot(), s=0.1)
+            ax1.set_xlabel(r'x', size=7)
+            ax1.set_ylabel(r'y', size=7)
+            ax1.set_zlabel(r'z', size=7)
+            plt.colorbar(im1, ax=ax1, shrink=0.3)
         else:
-            fig0 = plt.figure(figsize=(16, 9))
-            ax = fig0.add_subplot(121, projection='3d')
+            fig = plt.figure(figsize=(16, 9))
+            ax0 = fig.add_subplot(121, projection='3d')
+            ax0.set_title('Posterior mean', size=7,pad=3.0)
+            x_plot = x[:,0].numpy()
+            y_plot = x[:,1].numpy()
+            z_plot = x[:,2].numpy()
+            c = y.numpy()
             
-            # Display the mean field
-            pcm = ax.scatter(x[:,0], x[:,1], x[:,2],c=fMean.T,
-                             s=0.1,vmin=self.fMin,vmax=self.fMax)
-            plt.colorbar(pcm, ax=ax, shrink=0.3)
-            ax.set_xlim(xmin,xmax)
-            ax.set_ylim(ymin,ymax)
-            ax.set_zlim(zmin,zmax)
+            im0 = ax0.scatter(x_plot, y_plot, z_plot, c=c, cmap=cm.RdBu_r, s=0.1)
+            ax0.set_xlabel(r'x', size=7)
+            ax0.set_ylabel(r'y', size=7)
+            ax0.set_zlabel(r'z', size=7)
             
-        return fig0
-    
+            plt.colorbar(im0, ax=ax0, shrink=0.3)
+            
+        return fig
+        
+
     def sampleDataPoint(self,num_points = 1):
         unif = torch.ones(self.gridPoints.shape[0])
         idx = unif.multinomial(num_points, replacement = False)
