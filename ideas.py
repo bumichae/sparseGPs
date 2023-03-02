@@ -11,18 +11,30 @@ import numpy as np
 import pandas as pd
 import torch
 from doExperiments import *
+pd.options.display.max_columns = 999
 
-a = experiments(1,'Liu')
+
+a = experiments(3,'Yuan')
 
 a.x_train, a.y_train, a.x_test, a.y_test = a.prepareTrainingData()
 
-exact_gp_model,l_exact = a.trainExactGP()
+a.n_training = int(a.gridPoints.shape[0]/10)
+a.n_test = 2000
+a.x_train, a.y_train, a.x_test, a.y_test = a.prepareTrainingData()
 
+
+nn_model = a.trainNeuralNetwork(True)
+
+exact_gp_model,l_exact = a.trainExactGP(True)
 approximate_gp_model, l_approx = a.trainApproximateGP()
+approximate_gp_model_2, l_approx_2 = a.trainApproximateGP_noMB()
 
+nn_y_pred, nn_err = a.testNNModel(nn_model)
 means_exact,var_exact, err_exact = a.testExactGPModel(exact_gp_model,l_exact)
 means_approx,var_approx, err_approx = a.testApproximateGPModel(approximate_gp_model,l_approx)
+means_approx_2,var_approx_2, err_approx_2 = a.testApproximateGPModel(approximate_gp_model_2,l_approx_2)
 
+ 
 a.plot1d(a.x_test, means_exact,var_exact)
 a.plot1d(a.x_test, means_approx,var_approx)
 
@@ -80,62 +92,83 @@ for d in range(3):
     from doExperiments import *
     a = experiments(d+1,'Liu')
     if d == 0:
-        a.n_training = 800
-        a.n_inducing = 500
-        a.n_test = 200
+        a.n_training = 500
+        a.n_inducing = 250
+        a.n_test = 500
     else:
-        a.n_training = 1000
+        a.n_training = int(a.gridPoints.shape[0]/2)
         a.n_inducing = 500
         a.n_test = 2000
 
     mse_exact = torch.tensor([0.]).reshape([1,1])
     mse_approx = torch.tensor([0.]).reshape([1,1])
+    mse_nn = torch.tensor([0.]).reshape([1,1])
+    
     training_times_exact = np.array(0)
     training_times_approx = np.array(0)
+    training_times_nn = np.array(0)
     for i in range(5):
         a.x_train, a.y_train, a.x_test, a.y_test = a.prepareTrainingData()
         start_exact = time.time()
-        exact_gp_model,l_exact = a.trainExactGP()
+        exact_gp_model,l_exact = a.trainExactGP(earlyStopping=True)
         end_exact = time.time()
         
         start_approx = time.time()
         approximate_gp_model, l_approx = a.trainApproximateGP()
         end_approx = time.time()
+        
+        
+        start_nn = time.time()
+        nn_model = a.trainNeuralNetwork(earlyStopping=True)
+        end_nn = time.time()
+        
         print(str(i+1) + '/' + str(5) + ' Training done')
+        
         
         means_exact,var_exact, mse_exact_tmp = a.testExactGPModel(exact_gp_model,l_exact)
         means_approx,var_approx, mse_approx_tmp = a.testApproximateGPModel(approximate_gp_model,l_approx)    
-    
+        nn_y_pred, nn_err = a.testNNModel(nn_model)
+   
         print(str(i+1) + '/' + str(5) +  ' Testing done')
     
-        
+        mse_nn = torch.cat([mse_nn, nn_err.reshape([1,1])])
         mse_exact = torch.cat([mse_exact, mse_exact_tmp.reshape([1,1])])
         mse_approx = torch.cat([mse_approx, mse_approx_tmp.reshape([1,1])])
         training_times_exact = np.append(training_times_exact, end_exact - start_exact)
         training_times_approx = np.append(training_times_approx, end_approx - start_approx)
+        training_times_nn = np.append(training_times_nn, end_nn - start_nn)
         
     if d == 0:
         mse_exact_1d = mse_exact[1:]
         mse_approx_1d = mse_approx[1:]
         training_times_1d_exact = training_times_exact[1:]
         training_times_1d_approx = training_times_approx[1:]
+        mse_nn_1d = mse_nn[1:]
+        training_times_nn_1d = training_times_nn[1:]
     elif d == 1:
         mse_exact_2d = mse_exact[1:]
         mse_approx_2d = mse_approx[1:]
         training_times_2d_exact = training_times_exact[1:]
         training_times_2d_approx = training_times_approx[1:]
+        mse_nn_2d = mse_nn[1:]
+        training_times_nn_2d = training_times_nn[1:]
     elif d == 2:
         mse_exact_3d = mse_exact[1:]
         mse_approx_3d = mse_approx[1:]
         training_times_3d_exact = training_times_exact[1:]
         training_times_3d_approx = training_times_approx[1:]
+        mse_nn_3d = mse_nn[1:]
+        training_times_nn_3d = training_times_nn[1:]
 
 mse = pd.DataFrame({'Exact 1d MAE' : mse_exact_1d.detach().numpy().reshape([-1]),
                          'Exact 2d MAE' : mse_exact_2d.detach().numpy().reshape([-1]),
                          'Exact 3d MAE' : mse_exact_3d.detach().numpy().reshape([-1]),
                          'Approximate 1d MAE' : mse_approx_1d.detach().numpy().reshape([-1]),
                          'Approximate 2d MAE' : mse_approx_2d.detach().numpy().reshape([-1]),
-                         'Approximate 3d MAE' : mse_approx_3d.detach().numpy().reshape([-1])})
+                         'Approximate 3d MAE' : mse_approx_3d.detach().numpy().reshape([-1]),
+                         'MAE NN 1d' : mse_nn_1d.detach().numpy().reshape([-1]),
+                         'MAE NN 2d' : mse_nn_2d.detach().numpy().reshape([-1]),
+                         'MAE NN 3d' : mse_nn_3d.detach().numpy().reshape([-1])})
 
 training_times_exact = [training_times_1d_exact.mean(),training_times_2d_exact.mean(),training_times_3d_exact.mean()]
 training_times_approx = [training_times_1d_approx.mean(),training_times_2d_approx.mean(),training_times_3d_approx.mean()]
@@ -145,66 +178,15 @@ training_times = pd.DataFrame({'1d Exact Training Time' : training_times_1d_exac
                          '3d Exact Training Time' : training_times_3d_exact.mean().reshape([-1]),
                          '1d Approximate Training Time' : training_times_1d_approx.mean().reshape([-1]),
                          '2d Approximate Training Time' : training_times_2d_approx.mean().reshape([-1]),
-                         '3d Approximate Training Time' : training_times_3d_approx.mean().reshape([-1])})
+                         '3d Approximate Training Time' : training_times_3d_approx.mean().reshape([-1]),
+                         '1d NN Training Time' : training_times_nn_1d.mean().reshape([-1]),
+                         '2d NN Training Time' : training_times_nn_2d.mean().reshape([-1]),
+                         '3d NN Training Time' : training_times_nn_3d.mean().reshape([-1])})
 
 mse.to_clipboard(index=False)
 
 training_times.to_clipboard(index=False, header = False)
 
-
-
-### NN experiments 5 times on random train/test data for d = 1,2,3
-
-from doExperiments import *
-
-### this is killed as memory is full for d=2 after 2 training loops
-for d in range(3):
-    from doExperiments import *
-    a = experiments(d+1, 'Liu')
-    if d == 0:
-        a.n_training = 500
-        a.n_inducing = 250
-    else:
-        a.n_training = 1000
-        a.n_inducing = 500
-    mse_nn = torch.tensor([0.]).reshape([1,1])
-    training_times_nn = np.array(0)
-    for i in range(5):
-        a.x_train, a.y_train, a.x_test, a.y_test = a.prepareTrainingData()
-        
-        start = time.time()
-        nn_model = a.trainNeuralNetwork()
-        end = time.time()
-        print(str(i+1) + '/' + str(5) + ' Training done')
-        training_times_nn = np.append(training_times_nn, end - start)
-        nn_y_pred, nn_err = a.testNNModel(nn_model)
-        mse_nn = torch.cat([mse_nn, nn_err.reshape([1,1])])
-    if d == 0:
-        mse_nn_1d = mse_nn[1:]
-        training_times_nn_1d = training_times_nn[1:]
-    elif d == 1:
-        mse_nn_2d = mse_nn[1:]
-        training_times_nn_2d = training_times_nn[1:]
-    elif d == 2:
-        mse_nn_3d = mse_nn[1:]
-        training_times_nn_3d = training_times_nn[1:]
-        
-training_times_nn = [training_times_nn_1d.mean(),
-                     training_times_nn_2d.mean(),
-                     training_times_nn_3d.mean()]
-        
-mse = pd.DataFrame({'MSE NN 1d' : mse_nn_1d.detach().numpy().reshape([-1]),
-                    'MSE NN 2d' : mse_nn_2d.detach().numpy().reshape([-1]),
-                    'MSE NN 3d' : mse_nn_3d.detach().numpy().reshape([-1])})
-
-
-training_times_nn = pd.DataFrame({'MAE NN 1d' : training_times_nn_1d.mean().reshape([-1]),
-                         'MAE NN 2d' : training_times_nn_2d.mean().reshape([-1]),
-                         'MAE NN 3d' : training_times_nn_3d.mean().reshape([-1])})
-
-mse.to_clipboard(index = False)
-
-training_times_nn.to_clipboard(index=False, header=False)
 
 
 
@@ -218,8 +200,9 @@ pd.DataFrame(mse_nn_1d.detach().numpy()).to_clipboard(index=False)
 
 
 from doExperiments import *
-a = experiments(2,'Yuan')
-
+a = experiments(2,'Liu')
+a.n_training = 1000
+a.n_test = 20000
 a.x_train, a.y_train, a.x_test, a.y_test = a.prepareTrainingData()
 
 nn_model = a.trainNeuralNetwork()
@@ -267,3 +250,86 @@ plt.show()
     
     
     
+    
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Feb  9 16:40:27 2023
+
+@author: Michael
+"""
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
+import numpy as np
+from doExperiments import *
+
+a = experiments(3,'Liu')
+
+a.n_training = 4000
+a.n_test = 125000
+a.x_train, a.y_train, a.x_test, a.y_test = a.prepareTrainingData()
+
+exact_gp_model,l_exact = a.trainExactGP()
+
+approximate_gp_model, l_approx = a.trainApproximateGP()
+
+means_exact,var_exact, err_exact = a.testExactGPModel(exact_gp_model,l_exact)
+means_approx,var_approx, err_approx = a.testApproximateGPModel(approximate_gp_model,l_approx)
+
+### 3d plotting general
+fig = plt.figure(figsize=(16, 9))
+ax0 = fig.add_subplot(121, projection='3d')
+ax0.set_title('Posterior mean', size=7,pad=3.0)
+x = a.x_train[:,0].numpy()
+y = a.x_train[:,1].numpy()
+z = a.x_train[:,2].numpy()
+c = a.y_train.numpy()
+
+im0 = ax0.scatter(x, y, z, c=c, cmap=cm.RdBu_r, s=0.1)
+ax0.set_xlabel(r'x', size=7)
+ax0.set_ylabel(r'y', size=7)
+ax0.set_zlabel(r'z', size=7)
+
+plt.colorbar(im0, ax=ax0, shrink=0.3)
+
+ax1 = fig.add_subplot(122, projection='3d')
+ax1.set_title('Posterior variance', size=7,pad=3.0)
+
+x = a.x_test[:,0].numpy()
+y = a.x_test[:,1].numpy()
+z = a.x_test[:,2].numpy()
+c = var_exact.numpy()
+
+im1 = ax1.scatter(x, y, z, c=c, cmap=plt.hot(), s=0.1)
+ax1.set_xlabel(r'x', size=7)
+ax1.set_ylabel(r'y', size=7)
+ax1.set_zlabel(r'z', size=7)
+plt.colorbar(im1, ax=ax1, shrink=0.3)
+plt.show()
+
+
+
+### 2d plotting general
+
+fig = plt.figure(figsize=(16, 9))
+
+ax0 = fig.add_subplot(1, 2, 1)        
+ax0.set_title('Posterior mean', size=7,pad=3.0)
+
+x = a.x_test[:,0].numpy()
+y = a.x_test[:,1].numpy()
+c = means_exact.numpy()
+
+im0 = ax0.scatter(x,y,c)
+plt.colorbar(im0, ax=ax0, shrink=0.3)
+
+ax1 = fig.add_subplot(1, 2, 2)        
+ax1.set_title('Posterior variance', size=7,pad=3.0)
+
+x = a.x_test[:,0].numpy()
+y = a.x_test[:,1].numpy()
+c = var_exact.numpy()
+
+im1 = ax1.scatter(x,y,c)
+plt.colorbar(im1, ax=ax1, shrink=0.3)
+plt.show()
+

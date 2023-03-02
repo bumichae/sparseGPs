@@ -346,7 +346,7 @@ class experiments:
         y_test = self.sampleToyField(x_test) 
         return x_train, y_train, x_test, y_test
     
-    def trainNeuralNetwork(self):
+    def trainNeuralNetwork(self, earlyStopping = False, tol = 0.00001):
         
         if self.field == 'Liu':
         
@@ -369,12 +369,15 @@ class experiments:
             loss_function = nn.MSELoss()
             optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
             
-            losses = []
+            losses = [1000]
             start = time.time()
             for epoch in range(1000):
                 nn_y_pred = model(self.x_train.float())
                 loss = loss_function(nn_y_pred, self.y_train.reshape(nn_y_pred.shape).float())
                 losses.append(loss.item())
+                if earlyStopping:
+                    if (losses[epoch + 1] - losses[epoch]) / losses[epoch+1] < tol:
+                        break
             
                 model.zero_grad()
                 loss.backward()
@@ -392,12 +395,15 @@ class experiments:
             model = DenseNet(self.dim, (1000,500,500,100), 1)
             loss_function = nn.MSELoss()
             optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
-            losses = []
+            losses = [1000]
             start = time.time()
             for epoch in range(1000):
                 nn_y_pred = model(self.x_train.float())
                 loss = loss_function(nn_y_pred, self.y_train.reshape(nn_y_pred.shape).float())
                 losses.append(loss.item())
+                if earlyStopping:
+                    if (losses[epoch + 1] - losses[epoch]) / losses[epoch+1] < tol:
+                        break
             
                 model.zero_grad()
                 loss.backward()
@@ -411,7 +417,7 @@ class experiments:
         return model
 
         
-    def trainExactGP(self):
+    def trainExactGP(self, earlyStopping = False, tol = 0.00001):
         likelihood = gpytorch.likelihoods.GaussianLikelihood()
         model = ExactGPModel(self.x_train, self.y_train, likelihood).double()
         
@@ -423,7 +429,7 @@ class experiments:
         
         mll = gpytorch.mlls.ExactMarginalLogLikelihood(likelihood, model)
         
-        training_iter = 100
+        training_iter = 1000
         start = time.time()
         loss = [1000]
         for i in range(training_iter):
@@ -431,9 +437,9 @@ class experiments:
             output = model(self.x_train)
             
             loss.append(-mll(output, self.y_train))
-            
-            if (loss[i] - loss[i+1])/loss[i] < 0.0001:
-                break
+            if earlyStopping:
+                if (loss[i] - loss[i+1])/loss[i+1] < tol:
+                    break
             loss[i+1].backward()
             optimizer.step()
             if not i % 10:
@@ -477,6 +483,49 @@ class experiments:
                 minibatch_iter.set_postfix(loss=loss.item())
                 loss.backward()
                 optimizer.step()
+        end = time.time()
+        
+        print('Training took %.3f seconds' % (end-start))
+
+        return model, likelihood
+    
+    
+    def trainApproximateGP_noMB(self):
+        
+        train_dataset = TensorDataset(self.x_train, self.y_train)
+        train_loader = DataLoader(train_dataset, batch_size=500, shuffle=True)
+        
+        likelihood = gpytorch.likelihoods.GaussianLikelihood()
+        inducing_points = self.x_train[torch.randperm(len(self.x_train))[:self.n_inducing]] 
+        
+        model = ApproximateGPModel(inducing_points = inducing_points).double()
+        
+        model.train()
+        likelihood.train()
+        
+        optimizer = torch.optim.Adam([{'params' : model.parameters(), 'lr' : 0.1},
+                                     {'params' : likelihood.parameters(), 'lr' : 0.1}])
+        
+        mll = gpytorch.mlls.PredictiveLogLikelihood(likelihood, 
+                                                    model, 
+                                                    num_data=self.y_train.size(0))
+        
+        num_epochs = 1000       
+        epochs_iter = tqdm.tqdm(range(num_epochs), desc="Epoch")
+        loss = [1000]
+        start = time.time()
+        for i in epochs_iter:
+         
+            optimizer.zero_grad()
+            output = model(self.x_train)
+            loss.append(-mll(output, self.y_train))
+            print('\n' + str((loss[i] - loss[i+1])/loss[i] < 0.00000001) + '\n' + str(loss[i+1]))
+            if (loss[i] - loss[i+1])/loss[i+1] < 0.00000001:
+                break
+            loss[i+1].backward()
+            optimizer.step()
+            
+            
         end = time.time()
         
         print('Training took %.3f seconds' % (end-start))
