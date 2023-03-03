@@ -14,7 +14,7 @@ from doExperiments import *
 pd.options.display.max_columns = 999
 
 
-a = experiments(3,'Yuan')
+a = experiments(2,'Liu')
 
 a.x_train, a.y_train, a.x_test, a.y_test = a.prepareTrainingData()
 
@@ -44,10 +44,26 @@ a.plot2d(a.x_test, means_approx,var_approx)
 a.plot3d(a.x_test, means_exact,var_exact)
 a.plot3d(a.x_test, means_approx,var_approx)
 
+### plot model output on whole grid
 
-a.plot2d(a.x_test, means_exact_update,var_exact_update)
-a.plot2d(a.x_test, means_approx_update,var_approx_update)
+exact_gp_model.eval()
+gridDistExact = exact_gp_model(a.gridPoints)
+gridDistApprox = approximate_gp_model(a.gridPoints)
 
+a.plot1d(a.gridPoints, gridDistExact.mean.detach(),
+         gridDistExact.variance.detach())
+a.plot1d(a.gridPoints, gridDistApprox.mean.detach(),
+         gridDistApprox.variance.detach())
+
+a.plot2d(a.gridPoints, gridDistExact.mean.detach(),
+         gridDistExact.variance.detach())
+a.plot2d(a.gridPoints, gridDistApprox.mean.detach(),
+         gridDistApprox.variance.detach())
+
+a.plot3d(a.gridPoints, gridDistExact.mean.detach(),
+         gridDistExact.variance.detach())
+a.plot3d(a.gridPoints, gridDistApprox.mean.detach(),
+         gridDistApprox.variance.detach())
 
 
 
