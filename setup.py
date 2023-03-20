@@ -26,6 +26,25 @@ from models import *
 import time
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
+
+class EarlyStopper:
+    def __init__(self, patience=1, min_delta=0):
+        self.patience = patience
+        self.min_delta = min_delta
+        self.counter = 0
+        self.min_validation_loss = np.inf
+
+    def early_stop(self, validation_loss):
+        if validation_loss < self.min_validation_loss:
+            self.min_validation_loss = validation_loss
+            self.counter = 0
+        elif validation_loss > (self.min_validation_loss + self.min_delta):
+            self.counter += 1
+            if self.counter >= self.patience:
+                return True
+        return False
+    
+    
 class experiments:
     
     def __init__(self, dim = 1, field = 'Liu', gridSize = 2000):
@@ -350,41 +369,48 @@ class experiments:
         
         if self.field == 'Liu':
         
-            in1 = self.dim
-            out1 = 500
-            in2 = out1
-            out2 = 1000
-            in3 = out2
-            out3 = 1
+            # in1 = self.dim
+            # out1 = 500
+            # in2 = out1
+            # out2 = 1000
+            # in3 = out2
+            # out3 = 1
             
-            model = nn.Sequential(nn.Linear(in1, out1),
-                          nn.Tanh(),
-                          nn.Linear(in2,out2),
-                          nn.Tanh(),
-                          nn.Linear(in3,out3),
-                          nn.Tanh())
+            # model = nn.Sequential(nn.Linear(in1, out1),
+            #               nn.Tanh(),
+            #               nn.Linear(in2,out2),
+            #               nn.Tanh(),
+            #               nn.Linear(in3,out3),
+            #               nn.Tanh())
             
            
-    
+            model = DenseNet(self.dim, (1000,500,500,100), 1)
             loss_function = nn.MSELoss()
             optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
             
             losses = [1000]
             start = time.time()
+            early_stopping = EarlyStopper(patience=25, min_delta=0.00001)
             for epoch in range(1000):
                 nn_y_pred = model(self.x_train.float())
                 loss = loss_function(nn_y_pred, self.y_train.reshape(nn_y_pred.shape).float())
                 losses.append(loss.item())
-                if earlyStopping:
-                    if (losses[epoch + 1] - losses[epoch]) / losses[epoch+1] < tol:
-                        break
-            
+                
+                nn_y_val = model(self.x_test.float())
+                val_loss = loss_function(nn_y_val, self.y_test.reshape(nn_y_val.shape).float())
+                
+                
                 model.zero_grad()
                 loss.backward()
             
                 optimizer.step()
                 if(epoch % 100 == 0):
                     print("Finished Epoch " + str(epoch) + " out of " + str(1000))
+                
+                if earlyStopping:
+                    if early_stopping.early_stop(val_loss):
+                        print("Early stopping")
+                        break
             end = time.time()
             
             print('Training took %.3f seconds' %(end - start))
@@ -397,20 +423,23 @@ class experiments:
             optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
             losses = [1000]
             start = time.time()
+            early_stopping = EarlyStopper(patience=25, min_delta=0.00001)
             for epoch in range(1000):
                 nn_y_pred = model(self.x_train.float())
                 loss = loss_function(nn_y_pred, self.y_train.reshape(nn_y_pred.shape).float())
                 losses.append(loss.item())
-                if earlyStopping:
-                    if (losses[epoch + 1] - losses[epoch]) / losses[epoch+1] < tol:
-                        break
-            
+                           
                 model.zero_grad()
                 loss.backward()
             
                 optimizer.step()
                 if(epoch % 100 == 0):
                     print("Finished Epoch " + str(epoch) + " out of " + str(1000))
+                
+                if earlyStopping:
+                    if early_stopping.early_stop(val_loss):
+                        print("Early stopping")
+                        break
             end = time.time()
             
             print('Training took %.3f seconds' %(end - start))            
@@ -429,7 +458,7 @@ class experiments:
         
         mll = gpytorch.mlls.ExactMarginalLogLikelihood(likelihood, model)
         
-        training_iter = 1000
+        training_iter = 100
         start = time.time()
         loss = [1000]
         for i in range(training_iter):
@@ -592,178 +621,6 @@ class experiments:
         print('Test MAE: {}'.format(torch.mean(torch.abs(y_pred - self.y_test))))
         
         return y_pred, torch.mean(torch.abs(y_pred - self.y_test))
-    
-    # def plot1d(self,x, y, var = None):
-    #     # x-axis
-    #     if self.field == 'Liu':
-    #         xmin = -2.5
-    #         xmax = 2.5
-            
-    #     else:
-    #         xmin = 0
-    #         xmax = 1
-        
-    #     if var != None:
-            
-    #         fig0 = plt.figure(figsize = (16,9))
-            
-    #         ax0 = fig0.add_subplot(1, 2, 1)        
-    #         ax0.set_title('Posterior mean', size=7,pad=3.0)
-    #         ax0.plot(x.detach().numpy(),y.detach().numpy(),'b.')
-    #         ax0.set_xlabel(r'x', size=7)
-    #         ax0.set_ylabel(r'y', size=7)
-    #         ax0.set_xlim((xmin,xmax))
-    #         ax0.set_ylim((y.detach().min()-0.5,y.detach().max()+0.5))
-        
-    #         ax1 = fig0.add_subplot(1, 2, 2)
-    #         ax1.set_title('Posterior variance', size=7,pad=3.0)
-    #         ax1.plot(x.detach().numpy(),var.detach().numpy(), 'b.')         
-    #         ax1.set_xlabel(r'x', size=7)
-    #         ax1.set_ylabel(r'y', size=7)
-    #         ax1.set_xlim((xmin,xmax))
-    #         ax1.set_ylim((var.detach().min()-0.5,var.detach().max()+0.5))
-            
-            
-    #     else:
-    #         fig0 = plt.figure(figsize=(16,9))
-
-    #         ax0 = fig0.add_subplot(1, 2, 1)        
-    #         ax0.set_title('Prediction', size=7,pad=3.0)
-    #         ax0.plot(x.detach().numpy(),y.detach().numpy())
-    #         ax0.set_xlabel(r'x', size=7)
-    #         ax0.set_ylabel(r'y', size=7)
-    #         ax0.set_xlim((xmin,xmax))
-    #         ax0.set_ylim((y.detach().min()-0.5,y.detach().max()+0.5))
-        
-    #     return fig0
-    
-    # def plot2d(self,x,y, var = None):
-        
-    #     if self.field == 'Liu':
-    #         # x-axis
-    #         xmin = -2.5
-    #         xmax = 2.5
-    #         nx = 150
-    #         # y-axis
-    #         ymin = -2.5
-    #         ymax = 2.5
-    #         ny = 150
-    #     else:
-    #         xmin = 0
-    #         xmax = 1
-    #         ymin = 0
-    #         ymax = 1
-    #         nx = 150
-    #         ny = 150
-
-    #     if var != None:
-            
-    #         fig0 = plt.figure(figsize=(16,9))
-    
-    #         extent = (xmin,xmax,ymin,ymax)
-            
-    #         ax0 = fig0.add_subplot(1, 2, 1)        
-    #         ax0.set_title('Posterior mean', size=7,pad=3.0)
-    #         im0 = ax0.imshow(y.detach().numpy().reshape(ny,nx).T,  extent=extent,
-    #                           cmap=cm.RdBu_r,vmin=self.fMin,vmax = self.fMax)
-    #         plt.colorbar(im0, ax=ax0, shrink=0.3)
-    #         ax0.set_xlabel(r'x', size=7)
-    #         ax0.set_ylabel(r'y', size=7)
-    #         ax0.set_xlim((xmin,xmax))
-    #         ax0.set_ylim((ymin,ymax))
-            
-    #         ax1 = fig0.add_subplot(1, 2, 2)
-    #         ax1.set_title('Posterior variance', size=7,pad=3.0)
-    #         im1 = ax1.imshow(var.detach().numpy().reshape(ny,nx).T, extent=extent, 
-    #                           cmap=cm.RdBu_r,vmin=self.fVarMin,vmax = self.fVarMax)
-    #         plt.colorbar(im1, ax=ax1, shrink=0.3)              
-    #         ax1.set_xlabel(r'x', size=7)
-    #         ax1.set_ylabel(r'y', size=7)
-    #         ax1.set_xlim((xmin,xmax))
-    #         ax1.set_ylim((ymin,ymax))
-            
-    #     else:
-    #         fig0 = plt.figure(figsize=(16,9))
-    
-    #         extent = (xmin,xmax,ymin,ymax)
-            
-    #         ax0 = fig0.add_subplot(1, 2, 1)        
-    #         ax0.set_title('Posterior mean', size=7,pad=3.0)
-    #         im0 = ax0.imshow(y.detach().numpy().reshape(ny,nx).T,  extent=extent,
-    #                           cmap=cm.RdBu_r,vmin=self.fMin,vmax = self.fMax)
-    #         plt.colorbar(im0, ax=ax0, shrink=0.3)
-    #         ax0.set_xlabel(r'x', size=7)
-    #         ax0.set_ylabel(r'y', size=7)
-    #         ax0.set_xlim((xmin,xmax))
-    #         ax0.set_ylim((ymin,ymax))
-            
-    #     return fig0
-
-    # def plot3d(self,x,y,var = None):     
-        
-    #     if self.field == 'Liu':
-    #         # x-axis
-    #         nx = 50
-    #         xmin = -2.5
-    #         xmax = 2.5
-    #         nx = 50
-    #         # y-axis
-    #         ny = 50
-    #         ymin = -2.5
-    #         ymax = 2.5
-    #         ny = 50
-    #         # z-axis
-    #         nz = 50
-    #         zmin = -2.5
-    #         zmax = 2.5        
-    #         nz = 50
-    #     else:
-    #         nx = 50
-    #         ny = 50
-    #         nz = 50
-    #         xmin = 0
-    #         xmax = 1
-    #         ymin = 0
-    #         ymax = 1
-    #         zmin = 0
-    #         zmax = 1
-    #     fMean = y.detach().numpy().reshape(nx,ny,nz)       
-        
-    #     if var != None:
-    #         fVar = var.detach().numpy().reshape(nx,ny,nz)
-    #         fig0 = plt.figure(figsize=(16, 9))
-    #         ax = fig0.add_subplot(121, projection='3d')
-            
-    #         # Display the mean field
-    #         pcm = ax.scatter(x[:,0], x[:,1], x[:,2],c=fMean.T,
-    #                           s=0.1,vmin=self.fMin,vmax=self.fMax)
-    #         plt.colorbar(pcm, ax=ax, shrink=0.3)
-    #         ax.set_xlim(xmin,xmax)
-    #         ax.set_ylim(ymin,ymax)
-    #         ax.set_zlim(zmin,zmax)
-            
-    #         # display the variance field
-    #         ax = fig0.add_subplot(122, projection='3d')
-    #         pcm = ax.scatter(x[:,0], x[:,1], x[:,2],c=fVar.T,
-    #                           s=0.1,vmin=self.fVarMin,vmax=self.fVarMax)
-    #         plt.colorbar(pcm, ax=ax, shrink=0.3)
-    #         ax.set_xlim(xmin,xmax)
-    #         ax.set_ylim(ymin,ymax)
-    #         ax.set_zlim(zmin,zmax)
-    #     else:
-    #         fig0 = plt.figure(figsize=(16, 9))
-    #         ax = fig0.add_subplot(121, projection='3d')
-            
-    #         # Display the mean field
-    #         pcm = ax.scatter(x[:,0], x[:,1], x[:,2],c=fMean.T,
-    #                           s=0.1,vmin=self.fMin,vmax=self.fMax)
-    #         plt.colorbar(pcm, ax=ax, shrink=0.3)
-    #         ax.set_xlim(xmin,xmax)
-    #         ax.set_ylim(ymin,ymax)
-    #         ax.set_zlim(zmin,zmax)
-            
-    #     return fig0
-    
 
     def plot1d(self,x, y, var = None):
         # x-axis
