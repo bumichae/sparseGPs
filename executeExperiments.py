@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sun Mar 19 13:08:59 2023
-
-@author: Michael
+Change the n_training and n_inducing variables in lines 18-24 to 
+obtain the different results from the report
 """
 
 import time
@@ -21,8 +20,8 @@ for d in range(3):
         a.n_inducing = 250
         a.n_test = 500
     else:
-        a.n_training = 4000
-        a.n_inducing = 2000
+        a.n_training = 2000
+        a.n_inducing = 500
         a.n_test = 2000
 
     mse_exact = torch.tensor([0.]).reshape([1,1])
