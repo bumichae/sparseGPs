@@ -391,7 +391,7 @@ class experiments:
             losses = [1000]
             start = time.time()
             early_stopping = EarlyStopper(patience=25, min_delta=0.00001)
-            for epoch in range(1000):
+            for epoch in range(200):
                 nn_y_pred = model(self.x_train.float())
                 loss = loss_function(nn_y_pred, self.y_train.reshape(nn_y_pred.shape).float())
                 losses.append(loss.item())
@@ -424,7 +424,7 @@ class experiments:
             losses = [1000]
             start = time.time()
             early_stopping = EarlyStopper(patience=25, min_delta=0.00001)
-            for epoch in range(1000):
+            for epoch in range(200):
                 nn_y_pred = model(self.x_train.float())
                 loss = loss_function(nn_y_pred, self.y_train.reshape(nn_y_pred.shape).float())
                 losses.append(loss.item())

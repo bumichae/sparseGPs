@@ -17,11 +17,11 @@ for d in range(3):
     a = experiments(d+1,'Liu')
     if d == 0:
         a.n_training = 500
-        a.n_inducing = 250
+        a.n_inducing = 100
         a.n_test = 500
     else:
-        a.n_training = 2000
-        a.n_inducing = 500
+        a.n_training = 1000
+        a.n_inducing = 100
         a.n_test = 2000
 
     mse_exact = torch.tensor([0.]).reshape([1,1])
@@ -106,3 +106,7 @@ training_times = pd.DataFrame({'1d Exact Training Time' : training_times_1d_exac
                          '1d NN Training Time' : training_times_nn_1d.mean().reshape([-1]),
                          '2d NN Training Time' : training_times_nn_2d.mean().reshape([-1]),
                          '3d NN Training Time' : training_times_nn_3d.mean().reshape([-1])})
+
+
+mse.to_clipboard(index=False)
+training_times.to_clipboard(index=False, header = None)

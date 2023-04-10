@@ -15,19 +15,18 @@ from setup import *
 pd.options.display.max_columns = 999
 
 
-a = experiments(2,'Liu')
+a = experiments(1,'Liu')
 
-a.x_train, a.y_train, a.x_test, a.y_test = a.prepareTrainingData()
-
-a.n_training = int(a.gridPoints.shape[0]/10)
-a.n_test = 2000
+a.n_training = 500
+a.n_inducing = 100
+a.n_test = 500
 a.x_train, a.y_train, a.x_test, a.y_test = a.prepareTrainingData()
 nn_model = a.trainNeuralNetwork()
 a.testNNModel(nn_model)
 
 nn_model = a.trainNeuralNetwork(True)
 
-exact_gp_model,l_exact = a.trainExactGP(True)
+exact_gp_model,l_exact = a.trainExactGP()
 approximate_gp_model, l_approx = a.trainApproximateGP()
 approximate_gp_model_2, l_approx_2 = a.trainApproximateGP_noMB()
 
@@ -50,6 +49,7 @@ a.plot3d(a.x_test, means_approx,var_approx)
 
 a = experiments(2,'Liu')
 a.n_training = 2000
+a.n_inducing = 100
 a.x_train, a.y_train, a.x_test, a.y_test = a.prepareTrainingData()
 
 exact_gp_model,l_exact = a.trainExactGP()
@@ -66,18 +66,22 @@ nnGrid = nn_model(a.gridPoints.float())
 
 a.plot1d(a.gridPoints, gridDistExact.mean.detach(),
          gridDistExact.variance.detach())
+
 a.plot1d(a.gridPoints, gridDistApprox.mean.detach(),
          gridDistApprox.variance.detach())
 
 a.plot2d(a.gridPoints, gridDistExact.mean.detach(),
          gridDistExact.variance.detach())
+
 a.plot2d(a.gridPoints, gridDistApprox.mean.detach(),
          gridDistApprox.variance.detach())
+
 a.plot2d(a.gridPoints, nnGrid.detach())
 
 
 a.plot3d(a.gridPoints, gridDistExact.mean.detach(),
          gridDistExact.variance.detach())
+
 a.plot3d(a.gridPoints, gridDistApprox.mean.detach(),
          gridDistApprox.variance.detach())
 
